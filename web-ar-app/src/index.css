@@ -1,0 +1,17 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  background-color: transparent !important;
+  font-family: sans-serif;
+}
+
+video {
+  /* AR.js automatically manages video sizing and margins to match the canvas aspect ratio. 
+     Using !important or object-fit: cover breaks AR object positioning. */
+  z-index: -1 !important;
+}
