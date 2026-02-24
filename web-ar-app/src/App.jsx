@@ -1,133 +1,176 @@
-import { useEffect, useRef, useState } from 'react'
-import * as THREE from 'three'
-window.THREE = THREE
-import { THREEx } from '@ar-js-org/ar.js-threejs'
-import './index.css' // CSS geri geldi
-import monaLisaMelumat from './assets/MonaLisaMelumat.png'
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+window.THREE = THREE;
+import { THREEx } from '@ar-js-org/ar.js-threejs';
+import './index.css';
+import monaLisaMelumat from './assets/MonaLisaMelumat.png';
 
 export default function App() {
-  const [permissionGranted, setPermissionGranted] = useState(false)
-  const containerRef = useRef(null)
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const containerRef = useRef(null);
 
   const requestCamera = async () => {
-    // Uzaktan algılama için yüksek çözünürlük isteği
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "environment",
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Tarayıcı desteği yok.");
       }
-    })
-    stream.getTracks().forEach(track => track.stop())
-    setPermissionGranted(true)
-  }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1536 },
+          height: { ideal: 1024 }
+        }
+      });
+      stream.getTracks().forEach(track => track.stop());
+      setPermissionGranted(true);
+    } catch (err) {
+      setErrorMsg(err.message || "Kamera izni alınamadı.");
+    }
+  };
 
   useEffect(() => {
-    if (!permissionGranted || !containerRef.current) return
+    if (!permissionGranted || !containerRef.current) return;
 
-    const scene = new THREE.Scene()
-    const camera = new THREE.Camera()
-    scene.add(camera)
+    const scene = new THREE.Scene();
+    const camera = new THREE.Camera();
+    scene.add(camera);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    // Projeksiyon matrisiyle uyumlu 4:3 render boyutu
-    renderer.setSize(1280, 960)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.domElement.style.position = 'absolute'
-    renderer.domElement.style.top = '0px'
-    renderer.domElement.style.left = '0px'
-    containerRef.current.appendChild(renderer.domElement)
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true
+    });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0px';
+    renderer.domElement.style.left = '0px';
+    renderer.domElement.style.zIndex = '5';
+    containerRef.current.appendChild(renderer.domElement);
 
-    const light = new THREE.AmbientLight(0xffffff, 1)
-    scene.add(light)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const arSource = new THREEx.ArToolkitSource({
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+    scene.add(ambientLight);
+
+    const arToolkitSource = new THREEx.ArToolkitSource({
       sourceType: 'webcam',
-      sourceWidth: 1280,
+      sourceWidth: 1536,
       sourceHeight: 960,
-      displayWidth: 1280,
+      displayWidth: 1536,
       displayHeight: 960
-    })
+    });
 
     const onResize = () => {
-      arSource.onResizeElement()
-      arSource.copyElementSizeTo(renderer.domElement)
-      if (arContext.arController) arSource.copyElementSizeTo(arContext.arController.canvas)
-    }
+      arToolkitSource.onResizeElement();
+      arToolkitSource.copyElementSizeTo(renderer.domElement);
+      if (arToolkitContext.arController !== null) {
+        arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas);
+      }
+    };
 
-    arSource.init(() => {
-      setTimeout(onResize, 1000)
-      window.addEventListener('resize', onResize)
-    })
+    arToolkitSource.init(() => {
+      setTimeout(onResize, 500);
+      window.addEventListener('resize', onResize);
+    });
 
-    const arContext = new THREEx.ArToolkitContext({
+    const arToolkitContext = new THREEx.ArToolkitContext({
       cameraParametersUrl: 'https://raw.githack.com/AR-js-org/AR.js/master/data/data/camera_para.dat',
       detectionMode: 'mono',
       maxDetectionRate: 60,
-      canvasWidth: 1280,
+      canvasWidth: 1536,
       canvasHeight: 960
-    })
+    });
 
-    arContext.init(() => camera.projectionMatrix.copy(arContext.getProjectionMatrix()))
+    arToolkitContext.init(() => {
+      camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+    });
 
-    const markerRoot = new THREE.Group()
-    scene.add(markerRoot)
+    const markerGroup = new THREE.Group();
+    scene.add(markerGroup);
 
-    new THREEx.ArMarkerControls(arContext, markerRoot, {
+    // Mona Lisa NFT Marker
+    new THREEx.ArMarkerControls(arToolkitContext, markerGroup, {
       type: 'nft',
       descriptorsUrl: 'nft/MonaLisa',
       smooth: true,
-      smoothCount: 10,
-      smoothTolerance: 0.05,
-      smoothThreshold: 5
-    })
+      smoothCount: 15,
+      smoothTolerance: 0.005,
+      smoothThreshold: 3
+    });
 
-    // Panel Ayarları
-    const texture = new THREE.TextureLoader().load(monaLisaMelumat)
-    const geometry = new THREE.PlaneGeometry(1, 1)
-    const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide })
-    const panel = new THREE.Mesh(geometry, material)
+    // ─── Bilgi Paneli ───
+    // Hiro'daki ile BİREBİR AYNI mantık, sadece NFT birimleriyle
+    const texture = new THREE.TextureLoader().load(monaLisaMelumat);
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    texture.generateMipmaps = true;
 
-    // NFT'de (0,0) sol alttır. Merkeze (184/2, 274/2) alıp 
-    // zıplamayı önlemek için yüzeye (Z: 2) yakın tutuyoruz.
-    panel.position.set(92, 137, 2)
-    panel.scale.set(184, 274, 1)
-    markerRoot.add(panel)
+    // MonaLisaMelumat.png: 1536×1024 → oran 1.5:1
+    const PANEL_ASPECT = 1536 / 1024;
+    const geometry = new THREE.PlaneGeometry(PANEL_ASPECT, 1);
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+    const panel = new THREE.Mesh(geometry, material);
 
-    const smoothFactor = 0.15
-    const targetQuat = new THREE.Quaternion()
+    // Hiro'daki gibi: yatay düzlemde duran marker üzerinde paneli dikeye kaldır
+    panel.rotation.x = -Math.PI / 2;
 
-    function animate() {
-      requestAnimationFrame(animate)
-      if (arSource.ready) {
-        arContext.update(arSource.domElement)
+    // NFT koordinat sistemi: (0,0)=sol alt, (~184,~274)=sağ üst
+    // X=92 → yatay merkez, Z=-100 → biraz aşağıda (rotation sonrası Z = eski Y)
+    // Y=0.1 → yüzeyden hafif yukarıda
+    panel.position.set(92, 0.1, -100);
+    panel.scale.set(100, 100, 100);
+    markerGroup.add(panel);
 
-        if (markerRoot.visible) {
-          // Billboarding: Panel her zaman kameraya döner ama yerinden oynamaz
-          panel.lookAt(camera.position)
-        }
+    let req;
+    const animate = () => {
+      req = requestAnimationFrame(animate);
+      if (arToolkitSource.ready !== false) {
+        arToolkitContext.update(arToolkitSource.domElement);
       }
-      renderer.render(scene, camera)
-    }
-    animate()
+      renderer.render(scene, camera);
+    };
+    animate();
 
     return () => {
-      window.removeEventListener('resize', onResize)
-      if (containerRef.current) containerRef.current.innerHTML = ''
-    }
-  }, [permissionGranted])
+      cancelAnimationFrame(req);
+      window.removeEventListener('resize', onResize);
+      if (renderer.domElement && containerRef.current) {
+        containerRef.current.removeChild(renderer.domElement);
+      }
+      const video = document.querySelector('video');
+      if (video && video.parentNode) {
+        video.parentNode.removeChild(video);
+      }
+    };
+  }, [permissionGranted]);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div className="app-container">
       {!permissionGranted ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: '#1a1a1a' }}>
-          <button onClick={requestCamera} style={{ fontSize: 20, padding: '15px 30px', cursor: 'pointer', borderRadius: '10px', border: 'none', backgroundColor: '#00e5ff' }}>
-            Kamerayı Başlat
-          </button>
+        <div className="welcome-screen">
+          <div className="glass-card">
+            <h1>AR Sanat Rehberi</h1>
+            <p>Mona Lisa'nın gizemlerini keşfetmeye hazır mısınız?</p>
+            <button onClick={requestCamera} className="start-btn">
+              Kamerayı Başlat
+            </button>
+            {errorMsg && <p className="error">{errorMsg}</p>}
+          </div>
         </div>
       ) : (
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+        <div className="ar-overlay">
+          <div ref={containerRef} className="canvas-container" />
+          <div className="instruction-toast">
+            Mona Lisa resmini masaya koyun ve üstten bakın
+          </div>
+        </div>
       )}
     </div>
-  )
+  );
 }
