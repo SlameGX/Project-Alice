@@ -33,7 +33,7 @@ export default function App() {
   const requestCamera = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Tarayıcı desteği yok.");
+        throw new Error("Brauzer dəstəyi yoxdur.");
       }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -45,7 +45,7 @@ export default function App() {
       stream.getTracks().forEach(track => track.stop());
       setPermissionGranted(true);
     } catch (err) {
-      setErrorMsg(err.message || "Kamera izni alınamadı.");
+      setErrorMsg(err.message || "Kamera icazəsi alına bilmədi.");
     }
   };
 
@@ -59,7 +59,7 @@ export default function App() {
       setIsPlaying(true);
     } catch (err) {
       setIsPlaying(false);
-      setAudioError('Ses çalınamadı. Lütfen tekrar deneyin.');
+      setAudioError('Səs səsləndirilə bilmədi. Zəhmət olmasa yenidən cəhd edin.');
     }
   };
 
@@ -211,10 +211,10 @@ export default function App() {
       {!permissionGranted ? (
         <div className="welcome-screen">
           <div className="glass-card">
-            <h1>AR Sanat Rehberi</h1>
-            <p>Mona Lisa'nın gizemlerini keşfetmeye hazır mısınız?</p>
+            <h1>AR Sənət Bələdçisi</h1>
+            <p>Mona Lisanın sirlərini kəşf etməyə hazırsınız?</p>
             <button onClick={requestCamera} className="start-btn">
-              Kamerayı Başlat
+              Kameranı Başlat
             </button>
             {errorMsg && <p className="error">{errorMsg}</p>}
           </div>
@@ -225,20 +225,20 @@ export default function App() {
           {markerVisible && (
             <div className="audio-controls">
               <button onClick={handlePlay} className="audio-btn">
-                {isPlaying ? 'Ses Çalıyor' : 'Mona Lisa Sesini Çal'}
+                {isPlaying ? 'Səs səslənir' : 'Mona Lisa səsini səsləndir'}
               </button>
               <button
                 onClick={handleStop}
                 className="audio-btn audio-btn-stop"
                 disabled={!isPlaying}
               >
-                Durdur
+                Dayandır
               </button>
             </div>
           )}
           {audioError && <div className="audio-error">{audioError}</div>}
           <div className="instruction-toast">
-            Mona Lisa resmini masaya koyun ve üstten bakın
+            Mona Lisa şəklini masaya qoyun və yuxarıdan baxın
           </div>
         </div>
       )}
