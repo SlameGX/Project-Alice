@@ -211,7 +211,8 @@ export default function App() {
       {!permissionGranted ? (
         <div className="welcome-screen">
           <div className="glass-card">
-            <h1>AR Sənət Bələdçisi</h1>
+            <h1>Muzey bələdçisi</h1>
+            <p className="subtitle">AR ilə sənət əsərlərini asanlıqla kəşf edin.</p>
             <p>Mona Lisanın sirlərini kəşf etməyə hazırsınız?</p>
             <button onClick={requestCamera} className="start-btn">
               Kameranı Başlat
