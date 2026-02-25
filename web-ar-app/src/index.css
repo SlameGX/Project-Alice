@@ -88,6 +88,64 @@ h1 {
   pointer-events: none;
 }
 
+.audio-btn {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 28px;
+  font-size: 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.45);
+  background: rgba(0, 0, 0, 0.75);
+  color: #00ff88;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 11;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.audio-controls {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 11;
+}
+
+.audio-controls .audio-btn {
+  position: static;
+  transform: none;
+}
+
+.audio-btn-stop {
+  border-color: rgba(255, 88, 88, 0.6);
+  color: #ff8f8f;
+}
+
+.audio-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.audio-error {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff8f8f;
+  border: 1px solid rgba(255, 68, 68, 0.4);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  z-index: 11;
+}
+
 .error {
   color: #ff4444;
   margin-top: 20px;

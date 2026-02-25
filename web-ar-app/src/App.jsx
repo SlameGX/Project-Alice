@@ -4,11 +4,31 @@ window.THREE = THREE;
 import { THREEx } from '@ar-js-org/ar.js-threejs';
 import './index.css';
 import monaLisaMelumat from './assets/MonaLisaMelumat.png';
+import monaLisaSes from './assets/MonaLisaSes.mp3';
 
 export default function App() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [markerVisible, setMarkerVisible] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioError, setAudioError] = useState('');
   const containerRef = useRef(null);
+  const audioRef = useRef(null);
+  const markerVisibleRef = useRef(false);
+
+  useEffect(() => {
+    const audio = new Audio(monaLisaSes);
+    audio.preload = 'auto';
+    const onEnded = () => setIsPlaying(false);
+    audio.addEventListener('ended', onEnded);
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('ended', onEnded);
+      audioRef.current = null;
+    };
+  }, []);
 
   const requestCamera = async () => {
     try {
@@ -28,6 +48,35 @@ export default function App() {
       setErrorMsg(err.message || "Kamera izni alınamadı.");
     }
   };
+
+  const handlePlay = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setAudioError('');
+    try {
+      audio.currentTime = 0;
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      setIsPlaying(false);
+      setAudioError('Ses çalınamadı. Lütfen tekrar deneyin.');
+    }
+  };
+
+  const handleStop = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    setIsPlaying(false);
+    setAudioError('');
+  };
+
+  useEffect(() => {
+    if (!markerVisible) {
+      handleStop();
+    }
+  }, [markerVisible]);
 
   useEffect(() => {
     if (!permissionGranted || !containerRef.current) return;
@@ -133,6 +182,13 @@ export default function App() {
       if (arToolkitSource.ready !== false) {
         arToolkitContext.update(arToolkitSource.domElement);
       }
+
+      const currentVisible = markerGroup.visible === true;
+      if (currentVisible !== markerVisibleRef.current) {
+        markerVisibleRef.current = currentVisible;
+        setMarkerVisible(currentVisible);
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -166,6 +222,21 @@ export default function App() {
       ) : (
         <div className="ar-overlay">
           <div ref={containerRef} className="canvas-container" />
+          {markerVisible && (
+            <div className="audio-controls">
+              <button onClick={handlePlay} className="audio-btn">
+                {isPlaying ? 'Ses Çalıyor' : 'Mona Lisa Sesini Çal'}
+              </button>
+              <button
+                onClick={handleStop}
+                className="audio-btn audio-btn-stop"
+                disabled={!isPlaying}
+              >
+                Durdur
+              </button>
+            </div>
+          )}
+          {audioError && <div className="audio-error">{audioError}</div>}
           <div className="instruction-toast">
             Mona Lisa resmini masaya koyun ve üstten bakın
           </div>
